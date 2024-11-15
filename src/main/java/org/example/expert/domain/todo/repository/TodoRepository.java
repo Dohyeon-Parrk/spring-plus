@@ -11,34 +11,35 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 public interface TodoRepository extends JpaRepository<Todo, Long> {
-    // @Query("SELECT t FROM Todo t LEFT JOIN FETCH t.user u ORDER BY t.modifiedAt DESC")
 
-    @Query("select todo "
-        + "from Todo todo "
-        + "where todo.weather = :weather and todo.modifiedAt "
+    @Query("select t "
+        + "from Todo t "
+        + "where t.weather = :weather and t.modifiedAt "
         + "between :startDate and :endDate "
-        + "order by todo.modifiedAt desc")
+        + "order by t.modifiedAt desc")
     Page<Todo> findByWeatherAndModifiedAtBetween(Pageable pageable,
         @Param("weather") String weather,
         @Param("startDate") LocalDateTime startDate,
         @Param("endDate") LocalDateTime endDate);
 
-    @Query("select todo "
-        + "from Todo todo "
-        + "where todo.weather = :weather "
-        + "order by todo.modifiedAt desc")
+    @Query("select t "
+        + "from Todo t "
+        + "where t.weather = :weather "
+        + "order by t.modifiedAt desc")
     Page<Todo> findByWeather(Pageable pageable, @Param("weather") String weather);
 
-    @Query("select todo "
-        + "from Todo todo "
-        + "where todo.modifiedAt "
+    @Query("select t "
+        + "from Todo t "
+        + "where t.modifiedAt "
         + "between :startDate and :endDate "
-        + "order by todo.modifiedAt desc")
+        + "order by t.modifiedAt desc")
     Page<Todo> findByModifiedAtBetween(Pageable pageable,
         @Param("startDate") LocalDateTime startDate,
         @Param("endDate") LocalDateTime endDate);
 
-    @Query("select todo from Todo todo order by todo.modifiedAt desc")
+    @Query("select t "
+        + "from Todo t "
+        + "order by t.modifiedAt desc")
     Page<Todo> findAllByOrderByModifiedAtDesc(Pageable pageable);
 
     @Query("SELECT t FROM Todo t " +
