@@ -1,5 +1,7 @@
 package org.example.expert.domain.todo.service;
 
+import java.time.LocalDateTime;
+
 import lombok.RequiredArgsConstructor;
 import org.example.expert.client.WeatherClient;
 import org.example.expert.domain.common.dto.AuthUser;
@@ -47,10 +49,33 @@ public class TodoService {
         );
     }
 
-    public Page<TodoResponse> getTodos(int page, int size) {
+    public Page<TodoResponse> getTodos(int page, int size, String weather, String modifiedAt) {
         Pageable pageable = PageRequest.of(page - 1, size);
 
-        Page<Todo> todos = todoRepository.findAllByOrderByModifiedAtDesc(pageable);
+        // modifiedAt 파라미터를 기간 시작일, 기간 마지막일로 파싱
+        LocalDateTime startDate = null;
+        LocalDateTime endDate = null;
+
+        if(modifiedAt != null && !modifiedAt.isEmpty()) {
+            String[] dates = modifiedAt.split(",");
+            if(dates.length == 2){
+                startDate = LocalDateTime.parse(dates[0].trim());
+                endDate = LocalDateTime.parse(dates[1].trim());
+            }
+        }
+
+        Page<Todo> todos;
+
+        if(weather != null && startDate != null && endDate != null) {
+            todos = todoRepository.findByWeatherAndModifiedAtBetween(pageable, weather, startDate, endDate);
+        } else if(weather != null) {
+            todos = todoRepository.findByWeather(pageable, weather);
+        } else if(startDate != null && endDate != null) {
+            todos = todoRepository.findByModifiedAtBetween(pageable, startDate, endDate);
+        } else {
+            todos = todoRepository.findAllByOrderByModifiedAtDesc(pageable);
+        }
+
 
         return todos.map(todo -> new TodoResponse(
                 todo.getId(),
