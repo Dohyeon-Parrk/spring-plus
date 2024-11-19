@@ -7,7 +7,6 @@ import org.example.expert.client.WeatherClient;
 import org.example.expert.domain.common.dto.AuthUser;
 import org.example.expert.domain.common.exception.InvalidRequestException;
 import org.example.expert.domain.todo.dto.request.TodoSaveRequest;
-import org.example.expert.domain.todo.dto.request.TodoSearchRequest;
 import org.example.expert.domain.todo.dto.response.TodoResponse;
 import org.example.expert.domain.todo.dto.response.TodoSaveResponse;
 import org.example.expert.domain.todo.dto.response.TodoSearchResponse;
@@ -108,30 +107,31 @@ public class TodoService {
         );
     }
 
-    public Page<TodoSearchResponse> searchTodos(TodoSearchRequest todoSearchRequest) {
+    public Page<TodoSearchResponse> searchTodos(String keyword, String nickname, String startDate, String endDate,
+        int page, int size) {
         Pageable pageable = PageRequest.of(
-            todoSearchRequest.getPage() - 1,
-            todoSearchRequest.getSize(),
+            page - 1,
+            size,
             Sort.by(Sort.Direction.DESC, "createdAt")
         );
 
-        LocalDateTime startDate = null;
-        LocalDateTime endDate = null;
+        LocalDateTime parsingStartDate = null;
+        LocalDateTime parsingEndDate = null;
 
-        if (todoSearchRequest.getStartDate() != null){
-            startDate = LocalDateTime.parse(todoSearchRequest.getStartDate().trim());
+        if (startDate != null && !startDate.trim().isEmpty()){
+            parsingStartDate = LocalDateTime.parse(startDate.trim());
         }
 
-        if (todoSearchRequest.getEndDate() != null){
-            endDate = LocalDateTime.parse(todoSearchRequest.getEndDate().trim());
+        if (endDate != null && !endDate.trim().isEmpty()){
+            parsingEndDate = LocalDateTime.parse(endDate.trim());
         }
 
         return todoRepository.queryTodosByFilter(
             pageable,
-            todoSearchRequest.getKeyword(),
-            todoSearchRequest.getNickname(),
-            startDate,
-            endDate
+            keyword,
+            nickname,
+            parsingStartDate,
+            parsingEndDate
         );
     }
 }

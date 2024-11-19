@@ -45,7 +45,14 @@ public class TodoController {
 
     // QueryDSL 사용 검색 API
     @GetMapping("/todos/searchTodos")
-    public ResponseEntity<Page<TodoSearchResponse>> searchTodos(@RequestBody TodoSearchRequest todoSearchRequest){
-        return ResponseEntity.ok(todoService.searchTodos(todoSearchRequest));
+    public ResponseEntity<Page<TodoSearchResponse>> searchTodos(
+        @RequestParam(required = false) String keyword,
+        @RequestParam(required = false) String nickname,
+        @RequestParam(required = false) String startDate,
+        @RequestParam(required = false) String endDate,
+        @RequestParam(defaultValue = "1") int page,
+        @RequestParam(defaultValue = "10") int size){
+
+        return ResponseEntity.ok(todoService.searchTodos(keyword, nickname, startDate, endDate, page, size));
     }
 }
