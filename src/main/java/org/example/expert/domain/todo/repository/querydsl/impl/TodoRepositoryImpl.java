@@ -58,7 +58,7 @@ public class TodoRepositoryImpl implements TodoRepositoryCustom {
 
 		// 닉네임
 		if(nickname != null && !nickname.isEmpty()){
-			whereClause.and(user.nickname.containsIgnoreCase(nickname));
+			whereClause.and(todo.user.nickname.containsIgnoreCase(nickname));
 		}
 
 		// 생성일 범위
