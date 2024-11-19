@@ -7,6 +7,7 @@ import org.example.expert.client.WeatherClient;
 import org.example.expert.domain.common.dto.AuthUser;
 import org.example.expert.domain.common.exception.InvalidRequestException;
 import org.example.expert.domain.todo.dto.request.TodoSaveRequest;
+import org.example.expert.domain.todo.dto.request.TodoSearchRequest;
 import org.example.expert.domain.todo.dto.response.TodoResponse;
 import org.example.expert.domain.todo.dto.response.TodoSaveResponse;
 import org.example.expert.domain.todo.entity.Todo;
@@ -16,6 +17,7 @@ import org.example.expert.domain.user.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -103,5 +105,42 @@ public class TodoService {
                 todo.getCreatedAt(),
                 todo.getModifiedAt()
         );
+    }
+
+    public Page<TodoResponse> searchTodos(TodoSearchRequest todoSearchRequest) {
+        Pageable pageable = PageRequest.of(
+            todoSearchRequest.getPage() - 1,
+            todoSearchRequest.getSize(),
+            Sort.by(Sort.Direction.DESC, "createdAt")
+        );
+
+        LocalDateTime startDate = null;
+        LocalDateTime endDate = null;
+
+        if (todoSearchRequest.getStartDate() != null){
+            startDate = LocalDateTime.parse(todoSearchRequest.getStartDate().trim());
+        }
+
+        if (todoSearchRequest.getEndDate() != null){
+            endDate = LocalDateTime.parse(todoSearchRequest.getEndDate().trim());
+        }
+
+        Page<Todo> todos = todoRepository.queryTodosByFilter(
+            pageable,
+            todoSearchRequest.getKeyword(),
+            todoSearchRequest.getManagerUserId(),
+            startDate,
+            endDate
+        );
+
+        return todos.map(todo -> new TodoResponse(
+            todo.getId(),
+            todo.getTitle(),
+            todo.getContents(),
+            todo.getWeather(),
+            new UserResponse(todo.getUser().getId(), todo.getUser().getEmail()),
+            todo.getCreatedAt(),
+            todo.getModifiedAt()
+        ));
     }
 }
