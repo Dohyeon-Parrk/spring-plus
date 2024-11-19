@@ -10,6 +10,7 @@ import org.example.expert.domain.todo.dto.request.TodoSaveRequest;
 import org.example.expert.domain.todo.dto.request.TodoSearchRequest;
 import org.example.expert.domain.todo.dto.response.TodoResponse;
 import org.example.expert.domain.todo.dto.response.TodoSaveResponse;
+import org.example.expert.domain.todo.dto.response.TodoSearchResponse;
 import org.example.expert.domain.todo.entity.Todo;
 import org.example.expert.domain.todo.repository.TodoRepository;
 import org.example.expert.domain.user.dto.response.UserResponse;
@@ -107,7 +108,7 @@ public class TodoService {
         );
     }
 
-    public Page<TodoResponse> searchTodos(TodoSearchRequest todoSearchRequest) {
+    public Page<TodoSearchResponse> searchTodos(TodoSearchRequest todoSearchRequest) {
         Pageable pageable = PageRequest.of(
             todoSearchRequest.getPage() - 1,
             todoSearchRequest.getSize(),
@@ -125,22 +126,12 @@ public class TodoService {
             endDate = LocalDateTime.parse(todoSearchRequest.getEndDate().trim());
         }
 
-        Page<Todo> todos = todoRepository.queryTodosByFilter(
+        return todoRepository.queryTodosByFilter(
             pageable,
             todoSearchRequest.getKeyword(),
             todoSearchRequest.getNickname(),
             startDate,
             endDate
         );
-
-        return todos.map(todo -> new TodoResponse(
-            todo.getId(),
-            todo.getTitle(),
-            todo.getContents(),
-            todo.getWeather(),
-            new UserResponse(todo.getUser().getId(), todo.getUser().getEmail()),
-            todo.getCreatedAt(),
-            todo.getModifiedAt()
-        ));
     }
 }

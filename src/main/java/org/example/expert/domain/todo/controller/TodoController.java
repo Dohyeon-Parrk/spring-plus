@@ -8,6 +8,7 @@ import org.example.expert.domain.todo.dto.request.TodoSaveRequest;
 import org.example.expert.domain.todo.dto.request.TodoSearchRequest;
 import org.example.expert.domain.todo.dto.response.TodoResponse;
 import org.example.expert.domain.todo.dto.response.TodoSaveResponse;
+import org.example.expert.domain.todo.dto.response.TodoSearchResponse;
 import org.example.expert.domain.todo.service.TodoService;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -44,7 +45,7 @@ public class TodoController {
 
     // QueryDSL 사용 검색 API
     @GetMapping("/todos/searchTodos")
-    public ResponseEntity<Page<TodoResponse>> searchTodos(@RequestBody TodoSearchRequest todoSearchRequest){
+    public ResponseEntity<Page<TodoSearchResponse>> searchTodos(@RequestBody TodoSearchRequest todoSearchRequest){
         return ResponseEntity.ok(todoService.searchTodos(todoSearchRequest));
     }
 }
