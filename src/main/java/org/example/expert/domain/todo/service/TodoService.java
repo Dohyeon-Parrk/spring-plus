@@ -128,7 +128,7 @@ public class TodoService {
         Page<Todo> todos = todoRepository.queryTodosByFilter(
             pageable,
             todoSearchRequest.getKeyword(),
-            todoSearchRequest.getManagerUserId(),
+            todoSearchRequest.getNickname(),
             startDate,
             endDate
         );

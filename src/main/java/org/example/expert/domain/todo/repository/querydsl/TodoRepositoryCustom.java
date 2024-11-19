@@ -14,8 +14,9 @@ public interface TodoRepositoryCustom {
 	Page<Todo> queryTodosByFilter(
 		Pageable pageable,
 		String keyword,
-		String managerUserId,
+		String nickname,
 		LocalDateTime startDate,
-		LocalDateTime endDate);
+		LocalDateTime endDate
+	);
 
 }

@@ -10,6 +10,7 @@ import static org.example.expert.domain.user.entity.QUser.*;
 import org.example.expert.domain.todo.entity.QTodo;
 import org.example.expert.domain.todo.entity.Todo;
 import org.example.expert.domain.todo.repository.querydsl.TodoRepositoryCustom;
+import org.example.expert.domain.user.entity.QUser;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.support.PageableExecutionUtils;
@@ -38,16 +39,17 @@ public class TodoRepositoryImpl implements TodoRepositoryCustom {
 	}
 
 	@Override
-	public Page<Todo> queryTodosByFilter(Pageable pageable, String keyword, String managerUserId, LocalDateTime startDate, LocalDateTime endDate){
+	public Page<Todo> queryTodosByFilter(Pageable pageable, String keyword, String nickname, LocalDateTime startDate, LocalDateTime endDate){
 		QTodo todo = QTodo.todo;
+		QUser user = QUser.user;
 
 		BooleanBuilder whereClause = new BooleanBuilder();
 		if(keyword != null && !keyword.isEmpty()){
 			whereClause.and(todo.title.containsIgnoreCase(keyword));
 		}
 
-		if(managerUserId != null && !managerUserId.isEmpty()){
-			whereClause.and(todo.title.containsIgnoreCase(managerUserId));
+		if(nickname != null && !nickname.isEmpty()){
+			whereClause.and(user.nickname.containsIgnoreCase(nickname));
 		}
 
 		if(startDate != null){
@@ -60,6 +62,7 @@ public class TodoRepositoryImpl implements TodoRepositoryCustom {
 
 		List<Todo> todos = jpaQueryFactory
 			.selectFrom(todo)
+			.leftJoin(todo.user, user)
 			.where(whereClause)
 			.orderBy(todo.createdAt.desc())
 			.offset(pageable.getOffset())
@@ -68,6 +71,7 @@ public class TodoRepositoryImpl implements TodoRepositoryCustom {
 
 		long total = jpaQueryFactory
 			.selectFrom(todo)
+			.leftJoin(todo.user, user)
 			.where(whereClause)
 			.fetchCount();
 
