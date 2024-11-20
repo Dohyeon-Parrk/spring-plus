@@ -31,8 +31,7 @@ public class Log extends Timestamped {
 	@Column(nullable = false)
 	private String message;
 
-	public Log(Long id, LogAction action, String message) {
-		this.id = id;
+	public Log(LogAction action, String message) {
 		this.action = action;
 		this.message = message;
 	}

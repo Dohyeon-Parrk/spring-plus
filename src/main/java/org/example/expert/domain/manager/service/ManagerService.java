@@ -6,6 +6,9 @@ import org.example.expert.domain.common.exception.InvalidRequestException;
 import org.example.expert.domain.manager.dto.request.ManagerSaveRequest;
 import org.example.expert.domain.manager.dto.response.ManagerResponse;
 import org.example.expert.domain.manager.dto.response.ManagerSaveResponse;
+import org.example.expert.domain.manager.entity.Log;
+import org.example.expert.domain.manager.entity.LogAction;
+import org.example.expert.domain.manager.entity.LogMessage;
 import org.example.expert.domain.manager.entity.Manager;
 import org.example.expert.domain.manager.repository.ManagerRepository;
 import org.example.expert.domain.todo.entity.Todo;
@@ -14,6 +17,7 @@ import org.example.expert.domain.user.dto.response.UserResponse;
 import org.example.expert.domain.user.entity.User;
 import org.example.expert.domain.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
@@ -28,37 +32,62 @@ public class ManagerService {
     private final ManagerRepository managerRepository;
     private final UserRepository userRepository;
     private final TodoRepository todoRepository;
+    private final LogService logService;
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void logFailure(LogAction action, LogMessage message){
+        logService.saveLog(action, message.getMessage());
+    }
 
     @Transactional
     public ManagerSaveResponse saveManager(AuthUser authUser, long todoId, ManagerSaveRequest managerSaveRequest) {
         // 일정을 만든 유저
         User user = User.fromAuthUser(authUser);
         Todo todo = todoRepository.findById(todoId)
-                .orElseThrow(() -> new InvalidRequestException("Todo not found"));
+                .orElseThrow(() -> {
+                    logFailure(LogAction.SAVE_FAIL, LogMessage.SAVE_FAIL_INVALID_TODO);
+                    return new InvalidRequestException(LogMessage.SAVE_FAIL_INVALID_TODO.getMessage());
+                });
 
         if (todo.getUser() == null || !ObjectUtils.nullSafeEquals(user.getId(), todo.getUser().getId())) {
-            throw new InvalidRequestException("담당자를 등록하려고 하는 유저가 유효하지 않거나, 일정을 만든 유저가 아닙니다.");
+            logFailure(LogAction.SAVE_FAIL, LogMessage.SAVE_FAIL_INVALID_USER);
+            throw new InvalidRequestException(LogMessage.SAVE_FAIL_INVALID_USER.getMessage());
         }
 
         User managerUser = userRepository.findById(managerSaveRequest.getManagerUserId())
-                .orElseThrow(() -> new InvalidRequestException("등록하려고 하는 담당자 유저가 존재하지 않습니다."));
+                .orElseThrow(() -> {
+                    logFailure(LogAction.SAVE_FAIL, LogMessage.SAVE_FAIL_INVALID_MANAGER);
+                    return new InvalidRequestException(LogMessage.SAVE_FAIL_INVALID_MANAGER.getMessage());
+                });
 
         if (ObjectUtils.nullSafeEquals(user.getId(), managerUser.getId())) {
-            throw new InvalidRequestException("일정 작성자는 본인을 담당자로 등록할 수 없습니다.");
+            logFailure(LogAction.SAVE_FAIL, LogMessage.SAVE_FAIL_SELF_ASSIGN);
+            throw new InvalidRequestException(LogMessage.SAVE_FAIL_SELF_ASSIGN.getMessage());
         }
 
-        Manager newManagerUser = new Manager(managerUser, todo);
-        Manager savedManagerUser = managerRepository.save(newManagerUser);
+        try {
+            Manager newManagerUser = new Manager(managerUser, todo);
+            Manager savedManagerUser = managerRepository.save(newManagerUser);
 
-        return new ManagerSaveResponse(
-                savedManagerUser.getId(),
-                new UserResponse(managerUser.getId(), managerUser.getEmail())
-        );
+            logService.saveLog(LogAction.SAVE_SUCCESS, LogMessage.SAVE_SUCCESS.getMessage());
+
+            return new ManagerSaveResponse(
+                    savedManagerUser.getId(),
+                    new UserResponse(managerUser.getId(), managerUser.getEmail())
+            );
+        } catch (Exception e){
+            logFailure(LogAction.SAVE_FAIL, LogMessage.SAVE_FAIL);
+            throw  e;
+        }
+
     }
 
     public List<ManagerResponse> getManagers(long todoId) {
         Todo todo = todoRepository.findById(todoId)
-                .orElseThrow(() -> new InvalidRequestException("Todo not found"));
+            .orElseThrow(() -> {
+                logFailure(LogAction.SAVE_FAIL, LogMessage.SAVE_FAIL_INVALID_TODO);
+                return new InvalidRequestException(LogMessage.SAVE_FAIL_INVALID_TODO.getMessage());
+            });
 
         List<Manager> managerList = managerRepository.findByTodoIdWithUser(todo.getId());
 
@@ -78,19 +107,33 @@ public class ManagerService {
         User user = User.fromAuthUser(authUser);
 
         Todo todo = todoRepository.findById(todoId)
-                .orElseThrow(() -> new InvalidRequestException("Todo not found"));
+            .orElseThrow(() -> {
+                logFailure(LogAction.SAVE_FAIL, LogMessage.SAVE_FAIL_INVALID_TODO);
+                return new InvalidRequestException(LogMessage.SAVE_FAIL_INVALID_TODO.getMessage());
+            });
 
         if (todo.getUser() == null || !ObjectUtils.nullSafeEquals(user.getId(), todo.getUser().getId())) {
-            throw new InvalidRequestException("해당 일정을 만든 유저가 유효하지 않습니다.");
+            logFailure(LogAction.DELETE_FAIL, LogMessage.DELETE_FAIL_NOT_FOUND);
+            throw new InvalidRequestException(LogMessage.DELETE_FAIL_NOT_FOUND.getMessage());
         }
 
         Manager manager = managerRepository.findById(managerId)
-                .orElseThrow(() -> new InvalidRequestException("Manager not found"));
+                .orElseThrow(() -> {
+                    logFailure(LogAction.DELETE_FAIL, LogMessage.DELETE_FAIL_UNAUTHORIZED);
+                    return new InvalidRequestException(LogMessage.DELETE_FAIL_UNAUTHORIZED.getMessage());
+                });
 
         if (!ObjectUtils.nullSafeEquals(todo.getId(), manager.getTodo().getId())) {
-            throw new InvalidRequestException("해당 일정에 등록된 담당자가 아닙니다.");
+            logFailure(LogAction.DELETE_FAIL, LogMessage.DELETE_FAIL_UNAUTHORIZED);
+            throw new InvalidRequestException(LogMessage.DELETE_FAIL_UNAUTHORIZED.getMessage());
         }
 
-        managerRepository.delete(manager);
+        try {
+            managerRepository.delete(manager);
+            logService.saveLog(LogAction.DELETE_SUCCESS, LogMessage.DELETE_SUCCESS.getMessage());
+        } catch (Exception e){
+            logFailure(LogAction.DELETE_FAIL, LogMessage.DELETE_FAIL);
+            throw e;
+        }
     }
 }
