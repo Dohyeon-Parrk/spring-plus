@@ -107,6 +107,7 @@ public class TodoService {
         );
     }
 
+    // 검색 조건
     public Page<TodoSearchResponse> searchTodos(String keyword, String nickname, String startDate, String endDate,
         int page, int size) {
         Pageable pageable = PageRequest.of(
@@ -115,6 +116,7 @@ public class TodoService {
             Sort.by(Sort.Direction.DESC, "createdAt")
         );
 
+        // modifiedAt 파라미터를 기간 시작일, 기간 마지막일로 파싱
         LocalDateTime parsingStartDate = null;
         LocalDateTime parsingEndDate = null;
 

@@ -45,7 +45,7 @@ public class TodoRepositoryImpl implements TodoRepositoryCustom {
 	@Override
 	public Page<TodoSearchResponse> queryTodosByFilter(Pageable pageable, String keyword, String nickname, LocalDateTime startDate, LocalDateTime endDate){
 		QTodo todo = QTodo.todo;
-		QUser user = QUser.user;
+		// QUser user = QUser.user;
 		QComment comment = QComment.comment;
 		QManager manager = QManager.manager;
 
